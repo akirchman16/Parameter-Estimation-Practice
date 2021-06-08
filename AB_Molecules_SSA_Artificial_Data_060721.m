@@ -87,13 +87,13 @@ Final_State_B = reshape(Measurement_State_B(:,NumMeasurements),[1,Iterations]); 
 
 figure(3);
 subplot(2,1,1); %histogram of A final state
-hA = histfit(Final_State_A,ceil(sqrt(Iterations)),'kernel');
+hA = histfit(Final_State_A,min((max(Final_State_A)-min(Final_State_A)+1),ceil(sqrt(Iterations))),'kernel');
 hA(1).FaceColor = [0.9 0 0];
 xlabel('Final State (Population)');
 ylabel('Count');
 title('A');
 subplot(2,1,2); %histogram of B final state
-hB = histfit(Final_State_B,ceil(sqrt(Iterations)),'kernel');
+hB = histfit(Final_State_B,min((max(Final_State_B)-min(Final_State_B)+1),ceil(sqrt(Iterations))),'kernel');
 hB(1).FaceColor = [0 0 0.9];
 xlabel('Final State (Population)');
 ylabel('Count');
