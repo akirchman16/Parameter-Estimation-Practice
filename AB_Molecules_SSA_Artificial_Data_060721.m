@@ -80,15 +80,6 @@ for m = 1:Iterations
         Measurement_State_A(m,n) = A(m,find(t(m,:) <= n*Measurement_Step & t(m,:) > 0,1,'last'));   %records the state of the system (A population) at each measurement
         Measurement_State_B(m,n) = B(m,find(t(m,:) <= n*Measurement_Step & t(m,:) > 0,1,'last'));   %records the state of the system (B population) at each measurement
     end
-%     figure(2);  %plot of measurement data
-%     scatter(t_Measurement,Measurement_State_A(m,:),3,'r','filled');
-%     hold on;
-%     scatter(t_Measurement,Measurement_State_B(m,:),3,'b','filled');
-%     xlabel('Time');
-%     ylabel('State(s)');
-%     title('Measurement Data');
-%     legend('A','B');
-%     box on;
 end
 
 Final_State_A = reshape(Measurement_State_A(:,NumMeasurements),[1,Iterations]); %array of final state for A with each iteration
@@ -96,12 +87,14 @@ Final_State_B = reshape(Measurement_State_B(:,NumMeasurements),[1,Iterations]); 
 
 figure(3);
 subplot(2,1,1); %histogram of A final state
-histogram(Final_State_A,ceil(sqrt(Iterations)),'FaceColor','r');
+hA = histfit(Final_State_A,ceil(sqrt(Iterations)),'kernel');
+hA(1).FaceColor = [0.9 0 0];
 xlabel('Final State (Population)');
 ylabel('Count');
 title('A');
 subplot(2,1,2); %histogram of B final state
-histogram(Final_State_B,ceil(sqrt(Iterations)),'FaceColor','b');
+hB = histfit(Final_State_B,ceil(sqrt(Iterations)),'kernel');
+hB(1).FaceColor = [0 0 0.9];
 xlabel('Final State (Population)');
 ylabel('Count');
 title('B');
