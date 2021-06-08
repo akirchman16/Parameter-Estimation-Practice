@@ -13,7 +13,7 @@ close all;
 k_f = 0.2;  %kinetic rate constant for forward reaction
 k_r = 0.12;  %kinetic rate constant for reverse reaction
 
-Iterations = 1000;    %number of experimental trials are done for data
+Iterations = 10000;    %number of experimental trials are done for data
 MaxTime = 20;        %time value each iteration will run until
 
 % Allocation of Variables
