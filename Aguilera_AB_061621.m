@@ -10,7 +10,13 @@ close all;
 k_f_Real = 0.2; %real value for k_f
 k_r_Real = 0.12;    %real value for k_r
 
-Datasets = 100;    %number of data sets generated
+figure(1);
+subplot(2,2,2); %plot lines at correc parameter values
+yline(k_r_Real,'r');
+hold on;
+xline(k_f_Real,'r');
+
+Datasets = 1000;    %number of data sets generated
 MaxTime = 20;   %time value that the simulations run until
 
 % Memory Allocation
@@ -50,6 +56,7 @@ while Set_Count < Datasets
     end
     
     figure(1);  %plot trajectory of populations from SSA
+    subplot(2,2,1);
     scatter(t_Artificial(Set_Count,:),A_Artificial(Set_Count,:),1,'r','filled');
     hold on;
     scatter(t_Artificial(Set_Count,:),B_Artificial(Set_Count,:),1,'b','filled');
@@ -57,6 +64,7 @@ while Set_Count < Datasets
 end
 
 figure(1);
+subplot(2,2,1)
 xlabel('Time, t');
 xlim([0 MaxTime]);
 ylabel('Population');
@@ -71,22 +79,23 @@ for i = 1:Datasets
     B_FinalState_Artificial(1,i) = B_Artificial(i,find(t_Artificial(i,:) <= MaxTime & t_Artificial(i,:) > 0,1,'last'));    %finds last measurement value of population B
 end
 
-figure(2); %histograms of final state
-subplot(1,2,1); %A data
+figure(1); %histograms of final state
+subplot(2,2,3); %A data
 hA_Artificial = histfit(A_FinalState_Artificial,round(sqrt(Datasets)),'kernel');    %kernel fitting of histogram
 hA_Artificial(1).FaceColor = [0.95,0.40,0.40]; %new color of histogram
 hA_Artificial(2).Color = [0 0 0];
 hold on;
-xlabel('Final A Population');
-ylabel('Probability');
-title('A');
-subplot(1,2,2); %B data
+xlabel('Population');
+ylabel('Count');
+title('Final A');
+subplot(2,2,4); %B data
 hB_Artificial = histfit(B_FinalState_Artificial,round(sqrt(Datasets)),'kernel');    %kernel fitting of histogram
 hB_Artificial(1).FaceColor = [0.44,0.44,0.88]; %color of histogram
 hB_Artificial(2).Color = [0 0 0];
 hold on;
-xlabel('Final B Population');
-title('B');
+xlabel('Population');
+ylabel('Count');
+title('Final B');
 
 % Center of Bins at Peaks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 A_kernelPeak = hA_Artificial(2).XData(hA_Artificial(2).YData == max(hA_Artificial(2).YData));    %maximum peak of the kernel fit for artificial A data
@@ -107,10 +116,47 @@ for j = 1:Parameter_Sets
     k_f_Test = [k_f_Test, range_f(1)+(range_f(2)-range_f(1))*rand];
     k_r_Test = [k_r_Test, range_r(1)+(range_r(2)-range_r(1))*rand];
 end
-figure(3);  %scatter plot of all parameter values
+figure(1);  %scatter plot of all parameter values
+subplot(2,2,2);
 scatter(k_f_Test,k_r_Test,3,'k','filled');
+hold on;
 xlabel('k_f');
 ylabel('k_r');
 xlim(range_f);
 ylim(range_r);
 title('Parameter Values');
+
+% ODE Model to Test Deterministic Precondition %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+beta_High = 1.05;   %upper limit multiplier for deterministic precondition
+beta_Low = 0.95;    %lower limit multiplier for deterministic precondition
+Good_Parameters = [];   %initializes list of parameter sets which satisfy precondition
+
+dt = 0.001; %time step between Euler steps
+Steps = MaxTime/dt; %number steps taken in each numerical solution
+for k = 1:Parameter_Sets
+    k_f = k_f_Test(k);  %forward rate constant to be examined
+    k_r = k_r_Test(k);  %reverse rate constant to be examined
+    Parameters = [k_f;k_r]; %vector of parameters
+    
+    X = zeros(2,Steps+1);   %allocation of vectors to represent populations [A;B]
+    t = zeros(1,Steps+1);    %allocation of time array
+    
+    X(:,1) = [100;0];   %initial conditions
+    
+    for l = 1:Steps
+        X(:,l+1) = [1-k_f*dt, k_r*dt; k_f*dt, 1-k_r*dt]*X(:,l);  %Euler step
+        t(l+1) = t(l)+dt;   %advances time
+    end
+    
+    ODE_FinalState = round(X(:,end));
+    if (beta_Low*ODE_FinalState(1)) <= A_Max_BinCenter & A_Max_BinCenter <= (beta_High*ODE_FinalState(1)) %tests deterministic precondition for A
+        if (beta_Low*ODE_FinalState(2)) <= B_Max_BinCenter & B_Max_BinCenter <= (beta_High*ODE_FinalState(2))   %tests deterministic precondition for B
+            Good_Parameters = [Good_Parameters,Parameters]; %records that these were good parameters
+            
+            figure(1);
+            subplot(2,2,2);     %changes color of good parameters to red
+            scatter(Good_Parameters(1,:),Good_Parameters(2,:),3,'r','filled');
+            hold on;
+        end
+    end
+end
