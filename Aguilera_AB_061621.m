@@ -73,14 +73,44 @@ end
 
 figure(2); %histograms of final state
 subplot(1,2,1); %A data
-histogram(A_FinalState_Artificial,round(sqrt(Datasets)),'FaceColor','r','Normalization','probability');
+hA_Artificial = histfit(A_FinalState_Artificial,round(sqrt(Datasets)),'kernel');    %kernel fitting of histogram
+hA_Artificial(1).FaceColor = [0.95,0.40,0.40]; %new color of histogram
+hA_Artificial(2).Color = [0 0 0];
 hold on;
 xlabel('Final A Population');
 ylabel('Probability');
 title('A');
 subplot(1,2,2); %B data
-histogram(B_FinalState_Artificial,round(sqrt(Datasets)),'FaceColor','b','Normalization','probability');
+hB_Artificial = histfit(B_FinalState_Artificial,round(sqrt(Datasets)),'kernel');    %kernel fitting of histogram
+hB_Artificial(1).FaceColor = [0.44,0.44,0.88]; %color of histogram
+hB_Artificial(2).Color = [0 0 0];
 hold on;
 xlabel('Final B Population');
 title('B');
 
+% Center of Bins at Peaks %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+A_kernelPeak = hA_Artificial(2).XData(hA_Artificial(2).YData == max(hA_Artificial(2).YData));    %maximum peak of the kernel fit for artificial A data
+[A_val,A_idx] = min(abs(hA_Artificial(1).XData - A_kernelPeak));    %value of minimum difference between kernel peak and centers of bins
+A_Max_BinCenter = hA_Artificial(1).XData(A_idx);    %center of the bin which is closest to where the peak of the kernel fit is
+B_kernelPeak = hB_Artificial(2).XData(hB_Artificial(2).YData == max(hB_Artificial(2).YData));    %maximum peak of the kernel fit for artificial B data
+[B_val,B_idx] = min(abs(hB_Artificial(1).XData - B_kernelPeak));    %value of minimum difference between kernel peak and centers of bins
+B_Max_BinCenter = hB_Artificial(1).XData(B_idx);    %center of the bin which is closest to where the peak of the kernel fit is
+
+% Parameter Selection %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Parameter_Sets = 1000;   %number of parameter sets to generate
+range_f = [0 5];    %range of values for k_f
+range_r = [0 5];    %range of values for k_r
+
+k_f_Test = [];  %initial empty array of k_f parameters that will be tested
+k_r_Test = [];  %initial empty array of k_r parameters that will be tested
+for j = 1:Parameter_Sets
+    k_f_Test = [k_f_Test, range_f(1)+(range_f(2)-range_f(1))*rand];
+    k_r_Test = [k_r_Test, range_r(1)+(range_r(2)-range_r(1))*rand];
+end
+figure(3);  %scatter plot of all parameter values
+scatter(k_f_Test,k_r_Test,3,'k','filled');
+xlabel('k_f');
+ylabel('k_r');
+xlim(range_f);
+ylim(range_r);
+title('Parameter Values');
