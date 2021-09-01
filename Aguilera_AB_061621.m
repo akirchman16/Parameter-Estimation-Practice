@@ -13,15 +13,7 @@ k_f_Real = 1.41; %real value for k_f
 k_r_Real = 0.92;    %real value for k_r
 
 Datasets = 100;    %number of data sets generated
-MaxTime = 10;   %time value that the simulations run until
-
-figure(1);
-subplot(2,2,1)
-xlabel('Time, t');
-xlim([0 MaxTime]);
-ylabel('Population');
-ylim([0 inf]);
-title('A \leftrightarrow B (Artificial Data)');
+MaxTime = 5;   %time value that the simulations run until
 
 % Memory Allocation
 t_Artificial = zeros(Datasets,1);   %time
@@ -68,7 +60,12 @@ while Set_Count < Datasets
 end
 
 figure(1);
-subplot(2,2,1);
+subplot(2,2,1)
+xlabel('Time, t');
+xlim([0 MaxTime]);
+ylabel('Population');
+ylim([0 inf]);
+title('A \leftrightarrow B (Artificial Data)');
 legend('A','B');
 
 A_FinalState_Artificial = zeros(1,Datasets);    %memory allocation for final measured state of A
@@ -176,28 +173,20 @@ disp('Done');
 %%
 disp('Running SSA of "Reasonable" Parameters');
 
-AveragesAmt = 2;  %number of simulations run at each parameter set
+AveragesAmt = Datasets;  %number of simulations run at each parameter set (same as measurements of aritficial data)
 
-figure(2);
-subplot(2,2,1);
-xlabel('Time, t');
-xlim([0 MaxTime]);
-ylabel('Population');
-ylim([0 inf]);
-title('Accepted Parameter Trajectories');
-
-figure(2);
-subplot(2,2,2);
-scatter(Good_Parameters(1,:),Good_Parameters(2,:),3,'k','filled');
-hold on;
-yline(k_r_Real,'r');
-xline(k_f_Real,'r');
-title('Reasonable Parameters');
-xlabel('k_f');
-ylabel('k_r');
-xlim(range_f);
-ylim(range_r);
-box on;
+% figure(2);
+% subplot(2,2,2);
+% scatter(Good_Parameters(1,:),Good_Parameters(2,:),3,'k','filled');
+% hold on;
+% yline(k_r_Real,'r');
+% xline(k_f_Real,'r');
+% title('Reasonable Parameters');
+% xlabel('k_f');
+% ylabel('k_r');
+% xlim(range_f);
+% ylim(range_r);
+% box on;
 
 % Stochastic Simulation of each Parameter that passed Precondition %%%%%%%%
 Good_Sets = numel(Good_Parameters)/2;   %number of stochastic datasets to generate
@@ -210,10 +199,15 @@ dt_Precondition = zeros(Good_Sets,1);
 j_Precondition = zeros(Good_Sets,1);
 A_FinalState_Precondition = zeros(1,AveragesAmt);
 B_FinalState_Precondition = zeros(1,AveragesAmt);
+ObjFunction = zeros(1,Good_Sets);
 
 for m = 1:Good_Sets
     k_f_Precondition = Good_Parameters(1,m);    %selects parameters for this set of stochastic data
     k_r_Precondition = Good_Parameters(2,m);
+    clear hA_Precondition;
+    clear t_Precondition;
+    clear A_Precondition;
+    clear B_Precondition;
     for Avg_Sets = 1:AveragesAmt    %runs multiple simulations of each acceptable parameter set
         t_Precondition(Avg_Sets,1) = 0;  %initial time
         A_Precondition(Avg_Sets,1) = 100;    %initial population of A
@@ -243,6 +237,8 @@ for m = 1:Good_Sets
         A_FinalState_Precondition(Avg_Sets) = A_Precondition(Avg_Sets,find(t_Precondition(Avg_Sets,:) <= MaxTime & t_Precondition(Avg_Sets,:) > 0,1,'last')); %finds the last measured value for each simulation of A and B
         B_FinalState_Precondition(Avg_Sets) = B_Precondition(Avg_Sets,find(t_Precondition(Avg_Sets,:) <= MaxTime & t_Precondition(Avg_Sets,:) > 0,1,'last')); %based on data from parameters which passed deterministic precondition
     end
+    hA_Precondition = histfit(A_FinalState_Precondition,round(sqrt(AveragesAmt)),'kernel');   %kernel fitting of this parameter set
+    ObjFunction(m) = sum((hA_Artificial(1).YData-hA_Precondition(1).YData).^2);    %Objective Function
 end
 
 disp('Done');
