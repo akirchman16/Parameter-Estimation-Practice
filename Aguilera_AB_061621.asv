@@ -223,32 +223,10 @@ xlabel('Time, t');
 xlim([0 MaxTime]);
 ylabel('Population');
 ylim([0 inf]);
-title('Accepted Parameter Trajectories');
+title('A \leftrightarrow B (Deterministic Precondition Parameters)');
 legend('A','B');
 
 A_FinalState_Precondition = zeros(1,Good_Sets); %memory allocation for final measured states
 B_FinalState_Precondition = zeros(1,Good_Sets);
-for n = 1:Good_Sets
-    A_FinalState_Precondition(1,n) = A_Precondition(n,find(t_Precondition(n,:) <= MaxTime & t_Precondition(n,:) > 0,1,'last')); %finds the last measured value for each simulation of A and B
-    B_FinalState_Precondition(1,n) = B_Precondition(n,find(t_Precondition(n,:) <= MaxTime & t_Precondition(n,:) > 0,1,'last')); %based on data from parameters which passed deterministic precondition
-end
-
-figure(2);  %histograms of final state
-subplot(2,2,3); %A data
-hA_Precondition = histfit(A_FinalState_Precondition,round(sqrt(Good_Sets)),'kernel');   %kernel fitting of histogram
-hA_Precondition(1).FaceColor = [0.95,0.40,0.40];    %color of histogram
-hA_Precondition(2).Color = [0 0 0];
-hold on;
-xlabel('Population');
-ylabel('Count');
-title('Final A');
-subplot(2,2,4); %B data
-hB_Precondition = histfit(B_FinalState_Precondition,round(sqrt(Good_Sets)),'kernel');   %kernel fitting of histogram
-hB_Precondition(1).FaceColor = [0.44,0.44,0.88];    %color of histogram
-hB_Precondition(2).Color = [0 0 0];
-hold on;
-xlabel('Population');
-ylabel('Count');
-title('Final B');
 
 disp('Done');
