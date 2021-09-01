@@ -9,17 +9,19 @@ close all;
 %%
 disp('Generating Artificial Data');
 % Generate Artificial Data - SSA %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-k_f_Real = 0.2; %real value for k_f
-k_r_Real = 0.12;    %real value for k_r
+k_f_Real = 1.41; %real value for k_f
+k_r_Real = 0.92;    %real value for k_r
+
+Datasets = 100;    %number of data sets generated
+MaxTime = 10;   %time value that the simulations run until
 
 figure(1);
-subplot(2,2,2); %plot lines at correct parameter values
-yline(k_r_Real,'r');
-hold on;
-xline(k_f_Real,'r');
-
-Datasets = 300;    %number of data sets generated
-MaxTime = 20;   %time value that the simulations run until
+subplot(2,2,1)
+xlabel('Time, t');
+xlim([0 MaxTime]);
+ylabel('Population');
+ylim([0 inf]);
+title('A \leftrightarrow B (Artificial Data)');
 
 % Memory Allocation
 t_Artificial = zeros(Datasets,1);   %time
@@ -66,12 +68,7 @@ while Set_Count < Datasets
 end
 
 figure(1);
-subplot(2,2,1)
-xlabel('Time, t');
-xlim([0 MaxTime]);
-ylabel('Population');
-ylim([0 inf]);
-title('A \leftrightarrow B (Artificial Data)');
+subplot(2,2,1);
 legend('A','B');
 
 A_FinalState_Artificial = zeros(1,Datasets);    %memory allocation for final measured state of A
@@ -112,8 +109,20 @@ disp('Done');
 disp('Selecting Random Parameters');
 % Parameter Selection %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Parameter_Sets = 1000;   %number of parameter sets to generate
-range_f = [0 5];    %range of values for k_f
-range_r = [0 5];    %range of values for k_r
+range_f = [0 3];    %range of values for k_f
+range_r = [0 3];    %range of values for k_r
+
+figure(1);  %scatter plot of all parameter values
+subplot(2,2,2);
+yline(k_r_Real,'r');
+hold on;
+xline(k_f_Real,'r');
+xlabel('k_f');
+ylabel('k_r');
+xlim(range_f);
+ylim(range_r);
+title('Parameter Values');
+box on;
 
 k_f_Test = [];  %initial empty array of k_f parameters that will be tested
 k_r_Test = [];  %initial empty array of k_r parameters that will be tested
@@ -125,11 +134,6 @@ figure(1);  %scatter plot of all parameter values
 subplot(2,2,2);
 scatter(k_f_Test,k_r_Test,3,'k','filled');
 hold on;
-xlabel('k_f');
-ylabel('k_r');
-xlim(range_f);
-ylim(range_r);
-title('Parameter Values');
 
 disp('Done');
 %% 
@@ -171,6 +175,30 @@ end
 disp('Done');
 %%
 disp('Running SSA of "Reasonable" Parameters');
+
+AveragesAmt = 2;  %number of simulations run at each parameter set
+
+figure(2);
+subplot(2,2,1);
+xlabel('Time, t');
+xlim([0 MaxTime]);
+ylabel('Population');
+ylim([0 inf]);
+title('Accepted Parameter Trajectories');
+
+figure(2);
+subplot(2,2,2);
+scatter(Good_Parameters(1,:),Good_Parameters(2,:),3,'k','filled');
+hold on;
+yline(k_r_Real,'r');
+xline(k_f_Real,'r');
+title('Reasonable Parameters');
+xlabel('k_f');
+ylabel('k_r');
+xlim(range_f);
+ylim(range_r);
+box on;
+
 % Stochastic Simulation of each Parameter that passed Precondition %%%%%%%%
 Good_Sets = numel(Good_Parameters)/2;   %number of stochastic datasets to generate
 
@@ -180,75 +208,41 @@ A_Precondition = zeros(Good_Sets,1);
 B_Precondition = zeros(Good_Sets,1);
 dt_Precondition = zeros(Good_Sets,1);
 j_Precondition = zeros(Good_Sets,1);
+A_FinalState_Precondition = zeros(1,AveragesAmt);
+B_FinalState_Precondition = zeros(1,AveragesAmt);
 
 for m = 1:Good_Sets
     k_f_Precondition = Good_Parameters(1,m);    %selects parameters for this set of stochastic data
     k_r_Precondition = Good_Parameters(2,m);
-    
-    t_Precondition(m,1) = 0;  %initial time
-    A_Precondition(m,1) = 100;    %initial population of A
-    B_Precondition(m,1) = 0;  %initial population of B
-    
-    Event_Precondition = 0;
-    while max(t_Precondition(m,:)) < MaxTime
-        Event_Precondition = Event_Precondition+1;  %advances the event counter
-        
-        p_Precondition = [k_f_Precondition*A_Precondition(m,Event_Precondition),k_r_Precondition*B_Precondition(m,Event_Precondition)]; %propensity function(s)
-        Randoms_Precondition = [rand, rand];    %random numbers for SSA
-        dt_Precondition(m,Event_Precondition) = (1/sum(p_Precondition))*log(1/Randoms_Precondition(1)); %determining the time step for event
-        
-        if p_Precondition(1) > Randoms_Precondition(2)*sum(p_Precondition)
-            j_Precondition(m,Event_Precondition) = 1; %forward reaction occurs
-            A_Precondition(m,Event_Precondition+1) = A_Precondition(m,Event_Precondition)-1;  %decreases A population
-            B_Precondition(m,Event_Precondition+1) = B_Precondition(m,Event_Precondition)+1;  %increases B population
-        else
-            j_Precondition(m,Event_Precondition) = 2; %reverse reaction occurs
-            A_Precondition(m,Event_Precondition+1) = A_Precondition(m,Event_Precondition)+1;  %increases A population
-            B_Precondition(m,Event_Precondition+1) = B_Precondition(m,Event_Precondition)-1;  %decreases B population
+    for Avg_Sets = 1:AveragesAmt    %runs multiple simulations of each acceptable parameter set
+        t_Precondition(Avg_Sets,1) = 0;  %initial time
+        A_Precondition(Avg_Sets,1) = 100;    %initial population of A
+        B_Precondition(Avg_Sets,1) = 0;  %initial population of B
+
+        Event_Precondition = 0;
+        while max(t_Precondition(Avg_Sets,:)) < MaxTime
+            Event_Precondition = Event_Precondition+1;  %advances the event counter
+
+            p_Precondition = [k_f_Precondition*A_Precondition(Avg_Sets,Event_Precondition),k_r_Precondition*B_Precondition(Avg_Sets,Event_Precondition)]; %propensity function(s)
+            Randoms_Precondition = [rand, rand];    %random numbers for SSA
+            dt_Precondition(Avg_Sets,Event_Precondition) = (1/sum(p_Precondition))*log(1/Randoms_Precondition(1)); %determining the time step for event
+
+            if p_Precondition(1) > Randoms_Precondition(2)*sum(p_Precondition)
+                j_Precondition(Avg_Sets,Event_Precondition) = 1; %forward reaction occurs
+                A_Precondition(Avg_Sets,Event_Precondition+1) = A_Precondition(Avg_Sets,Event_Precondition)-1;  %decreases A population
+                B_Precondition(Avg_Sets,Event_Precondition+1) = B_Precondition(Avg_Sets,Event_Precondition)+1;  %increases B population
+            else
+                j_Precondition(Avg_Sets,Event_Precondition) = 2; %reverse reaction occurs
+                A_Precondition(Avg_Sets,Event_Precondition+1) = A_Precondition(Avg_Sets,Event_Precondition)+1;  %increases A population
+                B_Precondition(Avg_Sets,Event_Precondition+1) = B_Precondition(Avg_Sets,Event_Precondition)-1;  %decreases B population
+            end
+
+            t_Precondition(Avg_Sets,Event_Precondition+1) = t_Precondition(Avg_Sets,Event_Precondition)+dt_Precondition(m,Event_Precondition);    %advances the timer
         end
         
-        t_Precondition(m,Event_Precondition+1) = t_Precondition(m,Event_Precondition)+dt_Precondition(m,Event_Precondition);    %advances the timer
+        A_FinalState_Precondition(Avg_Sets) = A_Precondition(Avg_Sets,find(t_Precondition(Avg_Sets,:) <= MaxTime & t_Precondition(Avg_Sets,:) > 0,1,'last')); %finds the last measured value for each simulation of A and B
+        B_FinalState_Precondition(Avg_Sets) = B_Precondition(Avg_Sets,find(t_Precondition(Avg_Sets,:) <= MaxTime & t_Precondition(Avg_Sets,:) > 0,1,'last')); %based on data from parameters which passed deterministic precondition
     end
-    
-    figure(2);  %plot trajectory of data from the successful parameter sets (those that pased Precondition)
-    subplot(2,2,1);
-    scatter(t_Precondition(m,:),A_Precondition(m,:),1,'r','filled');
-    hold on;
-    scatter(t_Precondition(m,:),B_Precondition(m,:),1,'b','filled');
 end
-
-figure(2);
-subplot(2,2,1);
-xlabel('Time, t');
-xlim([0 MaxTime]);
-ylabel('Population');
-ylim([0 inf]);
-title('Accepted Parameter Trajectories');
-legend('A','B');
-
-A_FinalState_Precondition = zeros(1,Good_Sets); %memory allocation for final measured states
-B_FinalState_Precondition = zeros(1,Good_Sets);
-for n = 1:Good_Sets
-    A_FinalState_Precondition(1,n) = A_Precondition(n,find(t_Precondition(n,:) <= MaxTime & t_Precondition(n,:) > 0,1,'last')); %finds the last measured value for each simulation of A and B
-    B_FinalState_Precondition(1,n) = B_Precondition(n,find(t_Precondition(n,:) <= MaxTime & t_Precondition(n,:) > 0,1,'last')); %based on data from parameters which passed deterministic precondition
-end
-
-figure(2);  %histograms of final state
-subplot(2,2,3); %A data
-hA_Precondition = histfit(A_FinalState_Precondition,round(sqrt(Good_Sets)),'kernel');   %kernel fitting of histogram
-hA_Precondition(1).FaceColor = [0.95,0.40,0.40];    %color of histogram
-hA_Precondition(2).Color = [0 0 0];
-hold on;
-xlabel('Population');
-ylabel('Count');
-title('Final A');
-subplot(2,2,4); %B data
-hB_Precondition = histfit(B_FinalState_Precondition,round(sqrt(Good_Sets)),'kernel');   %kernel fitting of histogram
-hB_Precondition(1).FaceColor = [0.44,0.44,0.88];    %color of histogram
-hB_Precondition(2).Color = [0 0 0];
-hold on;
-xlabel('Population');
-ylabel('Count');
-title('Final B');
 
 disp('Done');
