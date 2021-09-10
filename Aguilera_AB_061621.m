@@ -204,10 +204,10 @@ ObjFunction = zeros(1,Good_Sets);
 for m = 1:Good_Sets
     k_f_Precondition = Good_Parameters(1,m);    %selects parameters for this set of stochastic data
     k_r_Precondition = Good_Parameters(2,m);
-    clear hA_Precondition;
-    clear t_Precondition;
-    clear A_Precondition;
-    clear B_Precondition;
+    hA_Precondition = [];
+    t_Precondition = [];
+    A_Precondition = [];
+    B_Precondition = [];
     for Avg_Sets = 1:AveragesAmt    %runs multiple simulations of each acceptable parameter set
         t_Precondition(Avg_Sets,1) = 0;  %initial time
         A_Precondition(Avg_Sets,1) = 100;    %initial population of A
